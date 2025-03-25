@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using System;
+using System.IO;
+using System.Threading.Tasks;
 
 [ApiController]
 [Route("api/webhook")]
@@ -11,7 +14,7 @@ public class WhatsAppWebhookController : ControllerBase
         // Substitua "SEU_TOKEN" pelo token configurado no Meta Developer
         if (hub_mode == "subscribe" && hub_verify_token == "SEU_TOKEN")
         {
-            return Ok(hub_challenge);
+            return Content(hub_challenge, "text/plain"); // Retorna apenas o desafio em texto puro
         }
         return Unauthorized();
     }
