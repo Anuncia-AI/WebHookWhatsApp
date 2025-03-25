@@ -18,16 +18,29 @@ namespace WebHookWhatsApp.Controllers
             _logger = logger;
         }
 
-        [HttpGet(Name = "GetWeatherForecast")]
-        public IEnumerable<WeatherForecast> Get()
+        //[HttpGet(Name = "GetWeatherForecast")]
+        //public IEnumerable<WeatherForecast> Get()
+        //{
+        //    return Enumerable.Range(1, 5).Select(index => new WeatherForecast
+        //    {
+        //        Date = DateTime.Now.AddDays(index),
+        //        TemperatureC = Random.Shared.Next(-20, 55),
+        //        Summary = Summaries[Random.Shared.Next(Summaries.Length)]
+        //    })
+        //    .ToArray();
+        //}
+
+        [HttpGet (Name = "TesteMocado")]
+        public IActionResult GetMockData()
         {
-            return Enumerable.Range(1, 5).Select(index => new WeatherForecast
-            {
-                Date = DateTime.Now.AddDays(index),
-                TemperatureC = Random.Shared.Next(-20, 55),
-                Summary = Summaries[Random.Shared.Next(Summaries.Length)]
-            })
-            .ToArray();
+            var mockData = new List<object>
+        {
+            new { Id = 1, Nome = "Matheus", Email = "matheus@email.com" },
+            new { Id = 2, Nome = "João", Email = "joao@email.com" },
+            new { Id = 3, Nome = "Maria", Email = "maria@email.com" }
+        };
+
+            return Ok(mockData);
         }
     }
 }
