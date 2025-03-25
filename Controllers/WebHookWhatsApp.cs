@@ -12,7 +12,9 @@ public class WhatsAppWebhookController : ControllerBase
     public IActionResult Verify([FromQuery] string? hub_mode, [FromQuery] string? hub_challenge, [FromQuery] string? hub_verify_token)
     {
         // Substitua "SEU_TOKEN" pelo token configurado no Meta Developer
-        if (hub_mode == "subscribe" && hub_verify_token == "SEU_TOKEN" && !string.IsNullOrEmpty(hub_challenge))
+        if (hub_mode == "subscribe" 
+            && hub_verify_token == "EAAHV0JpFtmIBOxRKwmzA75hzNw9JuPAcsZAZBMHxiAI3b3KT9fc2GeuGiBYowqEx9k8yIMsd0IFk1LmNlbdZBCO93ZAcHosLKQedaIRAZCK5JSmmG47ty2vCiaqJikLRqwwXexrkTzMZBp1SGtOyhOagAvzfIfTtZCB8vykBCozYFfvaz5kvKlZCm0UOTyMuhEOMBaW3UGyihZAijecskngQwQyT0ZAuMZD" 
+            && !string.IsNullOrEmpty(hub_challenge))
         {
             return Content(hub_challenge, "text/plain"); // Retorna apenas o desafio em texto puro
         }
