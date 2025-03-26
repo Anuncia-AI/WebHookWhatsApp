@@ -15,6 +15,16 @@ public class WhatsAppWebhookController : ControllerBase
     {
         _httpClient = new HttpClient();
     }
+    [HttpGet]
+    public IActionResult VerifyWebhook([FromQuery] string hub_mode, [FromQuery] string hub_challenge, [FromQuery] string hub_verify_token)
+    {
+        if (hub_mode == "subscribe" && hub_verify_token == Token)
+        {
+            return Ok(hub_challenge); // Meta exige esse retorno para validar
+        }
+
+        return Forbid();
+    }
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] JObject bodyParam)
     {
