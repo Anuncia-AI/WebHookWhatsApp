@@ -1,28 +1,22 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
+using WebHookWhatsApp;
 
 [Route("api/webhook")]
 [ApiController]
 public class WebhookController : ControllerBase
 {
-    private const string VerifyToken = "EAAHV0JpFtmIBO5tfWsVfMVYvNZBdKUTAlhsZCHmTOXI0l6Q62zBRIRFytTvfnZA29BKTbDr2b05yCpcELmUYiYkbSwC6OoaJuT0W98naGZA8xy18HvDO5J8tOYfVRUEPaKlPOAvFnpgD1me1JD2XohD2RleAyHLAbYY7EV9xerVaxOeT2cJQeSNcNRNdUzIJue2387oVssmJvOGWN0ZBrLxmgWHcZD";
-    //[HttpGet]
-    //public IActionResult VerifyWebhook([FromQuery(Name = "hub.mode")] string hubMode,
-    //                                   [FromQuery(Name = "hub.challenge")] string hubChallenge,
-    //                                   [FromQuery(Name = "hub.verify_token")] string hubVerifyToken)
-    //{
-    //    hubMode = "subscribe";
-    //
-    //    if (hubMode == "subscribe" && hubVerifyToken == VerifyToken)
-    //    {
-    //        return Ok(hubChallenge);
-    //    }
-    //
-    //    return BadRequest("Token inválido ou modo incorreto.");
-    //}
+    private readonly CriarNovoUsuarioProducer _criarUsuarioProducer;
+
+    public WebhookController(CriarNovoUsuarioProducer criarNovoUsuarioProducer)
+    {
+        _criarUsuarioProducer = criarNovoUsuarioProducer;
+    }
+
+
 
     [HttpPost]
-    public IActionResult ReceiveMessage([FromBody] JsonElement body)
+    public async Task<string> ReceiveMessage([FromBody] JsonElement body)
     {
         // Log para depuração
         Console.WriteLine(JsonSerializer.Serialize(body, new JsonSerializerOptions { WriteIndented = true }));
@@ -33,16 +27,24 @@ public class WebhookController : ControllerBase
                             .GetProperty("body")
                             .GetString();
 
+
+        if (mensagem != null)
+        {
+           await _criarUsuarioProducer.SendMessageRabbitMq(mensagem);
+        }
+
         var mensagemObjeto = new Mensagem
         {
             mensagem = mensagem
         };
 
-        return Ok(mensagemObjeto);
+
+
+        return mensagem;
     }
 }
 
-public class Mensagem 
+public class Mensagem
 {
     public string mensagem { get; set; }
 }
