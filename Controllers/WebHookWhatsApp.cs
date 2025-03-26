@@ -26,8 +26,7 @@ public class WebhookController : ControllerBase
 
         return BadRequest("Token de verificação inválido");
     }
-    [Route("api/webhook/criarusuario")]
-    [HttpPost]
+    [HttpPost (Name = "criarusuario")]
     public async Task<string> ReceiveMessage([FromBody] JsonElement body)
     {
         // Log para depuração
