@@ -1,69 +1,58 @@
-using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Text;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
-[ApiController]
 [Route("api/webhook")]
-public class WhatsAppWebhookController : ControllerBase
+[ApiController]
+public class WebhookController : ControllerBase
 {
-    private readonly HttpClient _httpClient;
-    private const string Token = "EAAHV0JpFtmIBO5tfWsVfMVYvNZBdKUTAlhsZCHmTOXI0l6Q62zBRIRFytTvfnZA29BKTbDr2b05yCpcELmUYiYkbSwC6OoaJuT0W98naGZA8xy18HvDO5J8tOYfVRUEPaKlPOAvFnpgD1me1JD2XohD2RleAyHLAbYY7EV9xerVaxOeT2cJQeSNcNRNdUzIJue2387oVssmJvOGWN0ZBrLxmgWHcZD";
+    private const string VerifyToken = "EAAHV0JpFtmIBO5tfWsVfMVYvNZBdKUTAlhsZCHmTOXI0l6Q62zBRIRFytTvfnZA29BKTbDr2b05yCpcELmUYiYkbSwC6OoaJuT0W98naGZA8xy18HvDO5J8tOYfVRUEPaKlPOAvFnpgD1me1JD2XohD2RleAyHLAbYY7EV9xerVaxOeT2cJQeSNcNRNdUzIJue2387oVssmJvOGWN0ZBrLxmgWHcZD";
+    //[HttpGet]
+    //public IActionResult VerifyWebhook([FromQuery(Name = "hub.mode")] string hubMode,
+    //                                   [FromQuery(Name = "hub.challenge")] string hubChallenge,
+    //                                   [FromQuery(Name = "hub.verify_token")] string hubVerifyToken)
+    //{
+    //    hubMode = "subscribe";
+    //
+    //    if (hubMode == "subscribe" && hubVerifyToken == VerifyToken)
+    //    {
+    //        return Ok(hubChallenge);
+    //    }
+    //
+    //    return BadRequest("Token inválido ou modo incorreto.");
+    //}
 
-
-    public WhatsAppWebhookController()
-    {
-        _httpClient = new HttpClient();
-    }
-    [HttpGet]
-    public IActionResult VerifyWebhook([FromQuery(Name = "hub.mode")] string hubMode,
-                                  [FromQuery(Name = "hub.challenge")] string hubChallenge,
-                                  [FromQuery(Name = "hub.verify_token")] string hubVerifyToken)
-    {
-        //const string VerifyToken = "SEU_TOKEN_AQUI"; // O mesmo que foi configurado no Meta
-
-        if (hubMode == "subscribe" && hubVerifyToken == Token)
-        {
-            return Ok(hubChallenge); // O Meta exige esse retorno para validar
-        }
-
-        return BadRequest("Token inv�lido ou modo incorreto.");
-    }
     [HttpPost]
-    public async Task<IActionResult> Post([FromBody] JObject bodyParam)
+    public IActionResult ReceiveMessage([FromBody] JsonElement body)
     {
-        if (bodyParam["object"] != null)
+        Console.WriteLine(JsonSerializer.Serialize(body, new JsonSerializerOptions { WriteIndented = true }));
+
+        if (body.TryGetProperty("entry", out var entryArray) && entryArray.ValueKind == JsonValueKind.Array)
         {
-            var entry = bodyParam["entry"]?.FirstOrDefault();
-            var changes = entry?["changes"]?.FirstOrDefault();
-            var value = changes?["value"];
-            var messages = value?["messages"]?.FirstOrDefault();
-
-            if (messages != null)
+            foreach (var entry in entryArray.EnumerateArray())
             {
-                string phoneNumberId = value?["metadata"]?["phone_number_id"]?.ToString();
-                string from = messages?["from"]?.ToString();
-                string msgBody = messages?["text"]?["body"]?.ToString();
-
-                Console.WriteLine($"Phone number: {phoneNumberId}");
-                Console.WriteLine($"From: {from}");
-                Console.WriteLine($"Message: {msgBody}");
-
-                var responseBody = new
+                if (entry.TryGetProperty("changes", out var changesArray) && changesArray.ValueKind == JsonValueKind.Array)
                 {
-                    messaging_product = "whatsapp",
-                    to = from,
-                    text = new { body = $"Hi.. I'm Prasath, your message is {msgBody}" }
-                };
+                    foreach (var change in changesArray.EnumerateArray())
+                    {
+                        if (change.TryGetProperty("value", out var value))
+                        {
+                            string phoneNumberId = value.GetProperty("metadata").GetProperty("phone_number_id").GetString();
+                            if (value.TryGetProperty("messages", out var messagesArray) && messagesArray.ValueKind == JsonValueKind.Array)
+                            {
+                                foreach (var message in messagesArray.EnumerateArray())
+                                {
+                                    string from = message.GetProperty("from").GetString();
+                                    string messageBody = message.GetProperty("text").GetProperty("body").GetString();
 
-                var jsonContent = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(responseBody), Encoding.UTF8, "application/json");
-
-
-                await _httpClient.PostAsync($"https://graph.facebook.com/v13.0/{phoneNumberId}/messages?access_token={Token}", jsonContent);
-
-                return Ok();
+                                    Console.WriteLine($"📩 Nova mensagem de {from}: {messageBody}");
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
-        return NotFound();
+
+        return Ok();
     }
 }
