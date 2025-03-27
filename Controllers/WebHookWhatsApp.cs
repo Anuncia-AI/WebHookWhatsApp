@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using System.Threading.Tasks;
 using WebHookWhatsApp;
 
 [Route("api/webhook")]
@@ -8,11 +10,16 @@ public class WebhookController : ControllerBase
 {
     private readonly CriarNovoUsuarioProducer _criarUsuarioProducer;
     private readonly IConfiguration _configuration;
+    private readonly ILogger<WebhookController> _logger;
 
-    public WebhookController(CriarNovoUsuarioProducer criarNovoUsuarioProducer, IConfiguration configuration)
+    public WebhookController(
+        CriarNovoUsuarioProducer criarNovoUsuarioProducer,
+        IConfiguration configuration,
+        ILogger<WebhookController> logger)
     {
         _criarUsuarioProducer = criarNovoUsuarioProducer;
-        _configuration = configuration; 
+        _configuration = configuration;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -31,8 +38,9 @@ public class WebhookController : ControllerBase
     [HttpPost (Name = "criarusuario")]
     public async Task<string> ReceiveMessage([FromBody] JsonElement body)
     {
-        // Log para depuração
-        Console.WriteLine(JsonSerializer.Serialize(body, new JsonSerializerOptions { WriteIndented = true }));
+        _logger.LogInformation("Recebendo mensagem do webhook.");
+        var jsonBody = JsonSerializer.Serialize(body, new JsonSerializerOptions { WriteIndented = true });
+        _logger.LogDebug("Payload recebido: {JsonBody}", jsonBody);
 
         var mensagem = body.GetProperty("value")
                             .GetProperty("messages")[0]
@@ -41,9 +49,10 @@ public class WebhookController : ControllerBase
                             .GetString();
 
 
-        if (mensagem != null)
+        if (mensagem == null)
         {
-           await _criarUsuarioProducer.SendMessageRabbitMq(mensagem);
+            _logger.LogInformation("Mensagem recebida: {Mensagem}", mensagem);
+            await _criarUsuarioProducer.SendMessageRabbitMq(mensagem);
         }
 
         var mensagemObjeto = new Mensagem
