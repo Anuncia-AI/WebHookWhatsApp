@@ -7,21 +7,23 @@ using WebHookWhatsApp;
 public class WebhookController : ControllerBase
 {
     private readonly CriarNovoUsuarioProducer _criarUsuarioProducer;
+    private readonly IConfiguration _configuration;
 
-    public WebhookController(CriarNovoUsuarioProducer criarNovoUsuarioProducer)
+    public WebhookController(CriarNovoUsuarioProducer criarNovoUsuarioProducer, IConfiguration configuration)
     {
         _criarUsuarioProducer = criarNovoUsuarioProducer;
+        _configuration = configuration; 
     }
 
     [HttpGet]
     public IActionResult VerifyWebhook([FromQuery] string hub_mode, [FromQuery] string hub_challenge, [FromQuery] string hub_verify_token)
     {
-        var verifyToken = "EAAHV0JpFtmIBO7dSkZA8vZAia41U98VMA5G4vw5LVUUsmleVpdcV4o1b6ZC60dFnl2nFAZBvKGpk4yXYMXYZC24Knes4SQxoDcX1NkelYLTP8hSCP1qA39ahoCOVIXm5QE7yQIwXZBZCWtZAOOj1IAMpOGK82nLuShVYFSssUEYQMYLzj8YvWT0bfRyFunxgzhOypZBMUThZADJAdk9YRgeEcBIVsgem8ZD"; // O mesmo token que você configurou no portal do Meta
+        var verifyToken = _configuration["Logging:MetaApi:Token"];
 
-        // Verifica se os parâmetros estão corretos e se o token bate
+
         if (hub_mode == "subscribe" && hub_verify_token == verifyToken)
         {
-            return Ok(hub_challenge); // Retorna o desafio para confirmar a inscrição
+            return Ok(hub_challenge);
         }
 
         return BadRequest("Token de verificação inválido");
